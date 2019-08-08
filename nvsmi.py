@@ -66,10 +66,12 @@ class GPU(object):
         self.temperature = temperature
 
     def __repr__(self):
+        msg = "id: {id} | UUID: {uuid} | gpu_util: {gpu_util:5.1f}% | mem_util: {mem_util:5.1f}% | mem_free: {mem_free:7.1f}MB |  mem_total: {mem_total:7.1f}MB"
+        msg = msg.format(**self.__dict__)
+        return msg
+
+    def to_json(self):
         return json.dumps(self.__dict__)
-        # msg = "id: {id} | UUID: {uuid} | gpu util: {gpu_util:5.1f}% | mem util: {mem_util:5.1f}%"
-        # msg = msg.format(**self.__dict__)
-        # return msg
 
 
 class GPUProcess(object):
@@ -82,8 +84,12 @@ class GPUProcess(object):
         self.used_memory = used_memory
 
     def __repr__(self):
+        msg = "pid: {pid} | gpu_id: {gpu_id} | gpu_uuid: {gpu_uuid} | gpu_name: {gpu_name} | used_memory: {used_memory:7.1f}MB"
+        msg = msg.format(**self.__dict__)
+        return msg
+
+    def to_json(self):
         return json.dumps(self.__dict__)
-        # return str(self.__dict__)
 
 
 def to_float_or_inf(value):
@@ -260,6 +266,9 @@ def parse_args():
         metavar="",
         help="Sort the GPUs using the specified attribute",
     )
+    ls_parser.add_argument(
+        "--json", action="store_true", help="Show results in JSON format"
+    )
 
     # processes
     ps_parser.add_argument(
@@ -273,6 +282,9 @@ def parse_args():
         nargs="+",
         metavar="",
         help="Show only the processes of the GPU matching the provided UUIDs",
+    )
+    ps_parser.add_argument(
+        "--json", action="store_true", help="Show results in JSON format"
     )
 
     args = main_parser.parse_args()
@@ -302,20 +314,24 @@ def main():
         )
         gpus.sort(key=operator.attrgetter(args.sort))
         for gpu in take(args.limit, gpus):
-            print(gpu)
+            output = gpu.to_json() if args.json else gpu
+            print(output)
     else:
         processes = get_gpu_processes()
         if args.ids:
             for proc in processes:
                 if proc.gpu_id in args.ids:
-                    print(proc)
+                    output = proc.to_json() if args.json else proc
+                    print(output)
         elif args.uuids:
             for proc in processes:
                 if proc.gpu_uuid in args.uuids:
-                    print(proc)
+                    output = proc.to_json() if args.json else proc
+                    print(output)
         else:
             for proc in processes:
-                print(proc)
+                output = proc.to_json() if args.json else proc
+                print(output)
 
 
 if __name__ == "__main__":
