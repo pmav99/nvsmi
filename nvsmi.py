@@ -100,7 +100,7 @@ def to_float_or_inf(value):
     return number
 
 
-def get_gpu(line):
+def _get_gpu(line):
     values = line.split(", ")
     id = values[0]
     uuid = values[1]
@@ -134,11 +134,11 @@ def get_gpu(line):
 def get_gpus():
     output = subprocess.check_output(shlex.split(NVIDIA_SMI_GET_GPUS))
     lines = output.decode("utf-8").split(os.linesep)
-    gpus = (get_gpu(line) for line in lines if line.strip())
+    gpus = (_get_gpu(line) for line in lines if line.strip())
     return gpus
 
 
-def get_gpu_proc(line, gpu_uuid_to_id_map):
+def _get_gpu_proc(line, gpu_uuid_to_id_map):
     values = line.split(", ")
     pid = int(values[0])
     process_name = values[1]
@@ -155,7 +155,7 @@ def get_gpu_processes():
     output = subprocess.check_output(shlex.split(NVIDIA_SMI_GET_PROCS))
     lines = output.decode("utf-8").split(os.linesep)
     processes = [
-        get_gpu_proc(line, gpu_uuid_to_id_map) for line in lines if line.strip()
+        _get_gpu_proc(line, gpu_uuid_to_id_map) for line in lines if line.strip()
     ]
     return processes
 
@@ -196,7 +196,7 @@ def get_available_gpus(
     return available_gpus
 
 
-def parse_args():
+def _parse_args():
     main_parser = argparse.ArgumentParser(
         prog="nvsmi", description="A (user-)friendy interface for nvidia-smi"
     )
@@ -279,7 +279,7 @@ def parse_args():
     return args
 
 
-def take(n, iterable):
+def _take(n, iterable):
     "Return first n items of the iterable as a list"
     return it.islice(iterable, n)
 
@@ -299,7 +299,7 @@ def _nvsmi_ls(args):
         )
     )
     gpus.sort(key=operator.attrgetter(args.sort))
-    for gpu in take(args.limit, gpus):
+    for gpu in _take(args.limit, gpus):
         output = gpu.to_json() if args.json else gpu
         print(output)
 
@@ -317,8 +317,8 @@ def _nvsmi_ps(args):
             print(output)
 
 
-def main():
-    args = parse_args()
+def _main():
+    args = _parse_args()
     if args.mode == "ls":
         _nvsmi_ls(args)
     else:
@@ -329,4 +329,4 @@ if __name__ == "__main__":
     # cli mode
     if not is_nvidia_smi_on_path():
         sys.exit("Couldn't find 'nvidia-smi' in $PATH: %s" % os.environ["PATH"])
-    main()
+    _main()
