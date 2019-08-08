@@ -2,6 +2,8 @@
 
 A (user-)friendly wrapper to `nvidia-smi`.
 
+It can be used to filter the GPUs based on resource usage (e.g. to choose the least utilized GPU on a multi-GPU system).
+
 ## Usage
 
 ### CLI
