@@ -300,38 +300,46 @@ def is_nvidia_smi_on_path():
     return which("nvidia-smi")
 
 
+def _nvsmi_ls(args):
+    gpus = list(
+        get_available_gpus(
+            gpu_util_max=args.gpu_util_max,
+            mem_util_max=args.mem_util_max,
+            mem_free_min=args.mem_free_min,
+            exclude_ids=args.exclude_ids,
+            exclude_uuids=args.exclude_uuids,
+        )
+    )
+    gpus.sort(key=operator.attrgetter(args.sort))
+    for gpu in take(args.limit, gpus):
+        output = gpu.to_json() if args.json else gpu
+        print(output)
+
+
+def _nvsmi_ps(args):
+    processes = get_gpu_processes()
+    if args.ids:
+        for proc in processes:
+            if proc.gpu_id in args.ids:
+                output = proc.to_json() if args.json else proc
+                print(output)
+    elif args.uuids:
+        for proc in processes:
+            if proc.gpu_uuid in args.uuids:
+                output = proc.to_json() if args.json else proc
+                print(output)
+    else:
+        for proc in processes:
+            output = proc.to_json() if args.json else proc
+            print(output)
+
+
 def main():
     args = parse_args()
     if args.mode == "ls":
-        gpus = list(
-            get_available_gpus(
-                gpu_util_max=args.gpu_util_max,
-                mem_util_max=args.mem_util_max,
-                mem_free_min=args.mem_free_min,
-                exclude_ids=args.exclude_ids,
-                exclude_uuids=args.exclude_uuids,
-            )
-        )
-        gpus.sort(key=operator.attrgetter(args.sort))
-        for gpu in take(args.limit, gpus):
-            output = gpu.to_json() if args.json else gpu
-            print(output)
+        _nvsmi_ls(args)
     else:
-        processes = get_gpu_processes()
-        if args.ids:
-            for proc in processes:
-                if proc.gpu_id in args.ids:
-                    output = proc.to_json() if args.json else proc
-                    print(output)
-        elif args.uuids:
-            for proc in processes:
-                if proc.gpu_uuid in args.uuids:
-                    output = proc.to_json() if args.json else proc
-                    print(output)
-        else:
-            for proc in processes:
-                output = proc.to_json() if args.json else proc
-                print(output)
+        _nvsmi_ps(args)
 
 
 if __name__ == "__main__":
