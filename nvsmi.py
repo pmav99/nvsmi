@@ -168,9 +168,9 @@ def is_gpu_available(
 
 
 def get_available_gpus(
-    gpu_util_max=0.5,
-    mem_util_max=0.5,
-    mem_free_min=100,
+    gpu_util_max=1.0,
+    mem_util_max=1.0,
+    mem_free_min=0,
     exclude_ids=None,
     exclude_uuids=None,
 ):
