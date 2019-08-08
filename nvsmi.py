@@ -151,9 +151,9 @@ def get_gpu_proc(line, gpu_uuid_to_id_map):
 
 
 def get_gpu_processes():
+    gpu_uuid_to_id_map = {gpu.uuid: gpu.id for gpu in get_gpus()}
     output = subprocess.check_output(shlex.split(NVIDIA_SMI_GET_PROCS))
     lines = output.decode("utf-8").split(os.linesep)
-    gpu_uuid_to_id_map = _populate_gpu_uuid_to_id_map()
     processes = [
         get_gpu_proc(line, gpu_uuid_to_id_map) for line in lines if line.strip()
     ]
@@ -194,18 +194,6 @@ def get_available_gpus(
     )
     available_gpus = it.compress(gpus, selectors)
     return available_gpus
-
-
-# Generate gpu uuid to id map
-def _populate_gpu_uuid_to_id_map():
-    try:
-        gpu_map = {gpu.uuid: gpu.id for gpu in get_gpus()}
-    except:
-        t, v, tb = sys.exc_info()
-        print("Something went wrong while parsing the nvidia-smi output")
-        raise
-    else:
-        return gpu_map
 
 
 def parse_args():
