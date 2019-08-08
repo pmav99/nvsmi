@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nvsmi"
-version = "0.2.0"
+version = "0.3.0"
 description = "A (user-)friendly wrapper to nvidia-smi"
 authors = ["Panos Mavrogiorgos <pmav99@gmail.com>"]
 license = "MIT"
