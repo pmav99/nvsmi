@@ -318,14 +318,9 @@ def _nvsmi_ls(args):
 
 def _nvsmi_ps(args):
     processes = get_gpu_processes()
-    if args.ids:
+    if args.ids or args.uuids:
         for proc in processes:
-            if proc.gpu_id in args.ids:
-                output = proc.to_json() if args.json else proc
-                print(output)
-    elif args.uuids:
-        for proc in processes:
-            if proc.gpu_uuid in args.uuids:
+            if proc.gpu_id in args.ids or proc.gpu_uuid in args.uuids:
                 output = proc.to_json() if args.json else proc
                 print(output)
     else:
