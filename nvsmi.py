@@ -132,14 +132,14 @@ def get_gpus():
     return gpus
 
 
-def get_gpu_proc(line):
+def get_gpu_proc(line, gpu_uuid_to_id_map):
     values = line.split(", ")
     pid = int(values[0])
     process_name = values[1]
     gpu_uuid = values[2]
     gpu_name = values[3]
     used_memory = to_float_or_inf(values[4])
-    gpu_id = _GPUS_UUID_MAP.get(gpu_uuid, -1)
+    gpu_id = gpu_uuid_to_id_map.get(gpu_uuid, -1)
     proc = GPUProcess(pid, process_name, gpu_id, gpu_uuid, gpu_name, used_memory)
     return proc
 
@@ -147,7 +147,10 @@ def get_gpu_proc(line):
 def get_gpu_processes():
     output = subprocess.check_output(shlex.split(NVIDIA_SMI_GET_PROCS))
     lines = output.decode("utf-8").split(os.linesep)
-    processes = [get_gpu_proc(line) for line in lines if line.strip()]
+    gpu_uuid_to_id_map = _populate_gpu_uuid_to_id_map()
+    processes = [
+        get_gpu_proc(line, gpu_uuid_to_id_map) for line in lines if line.strip()
+    ]
     return processes
 
 
@@ -176,20 +179,21 @@ def get_available_gpus(
     exclude_ids = exclude_ids or tuple()
     exclude_uuids = exclude_uuids or tuple()
     # filter available gpus
+    gpus = list(get_gpus())
     selectors = (
         is_gpu_available(
             gpu, gpu_util_max, mem_util_max, mem_free_min, exclude_ids, exclude_uuids
         )
-        for gpu in _GPUS
+        for gpu in gpus
     )
-    available = it.compress(_GPUS, selectors)
-    return available
+    available_gpus = it.compress(gpus, selectors)
+    return available_gpus
 
 
 # Generate gpu uuid to id map
 def _populate_gpu_uuid_to_id_map():
     try:
-        gpu_map = {gpu.uuid: gpu.id for gpu in _GPUS}
+        gpu_map = {gpu.uuid: gpu.id for gpu in get_gpus()}
     except:
         t, v, tb = sys.exc_info()
         print("Something went wrong while parsing the nvidia-smi output")
@@ -285,16 +289,7 @@ def is_nvidia_smi_on_path():
 
 
 def main():
-    global _GPUS
-    global _GPUS_UUID_MAP
-
     args = parse_args()
-    if not is_nvidia_smi_on_path():
-        sys.exit("Couldn't find 'nvidia-smi' in $PATH: %s" % os.environ["PATH"])
-    else:
-        _GPUS = list(get_gpus())
-        _GPUS_UUID_MAP = _populate_gpu_uuid_to_id_map()
-
     if args.mode == "ls":
         gpus = list(
             get_available_gpus(
@@ -310,23 +305,21 @@ def main():
             print(gpu)
     else:
         processes = get_gpu_processes()
-        if args.id:
+        if args.ids:
             for proc in processes:
-                if proc.gpu_id == args.id:
+                if proc.gpu_id in args.ids:
                     print(proc)
-        elif args.uuid:
+        elif args.uuids:
             for proc in processes:
-                if proc.gpu_uuid == args.uuid:
+                if proc.gpu_uuid in args.uuids:
                     print(proc)
         else:
             for proc in processes:
                 print(proc)
 
 
-# Map ids to UUIDs
-_GPUS = None
-_GPUS_UUID_MAP = None
-
-
 if __name__ == "__main__":
+    # cli mode
+    if not is_nvidia_smi_on_path():
+        sys.exit("Couldn't find 'nvidia-smi' in $PATH: %s" % os.environ["PATH"])
     main()
