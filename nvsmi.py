@@ -28,7 +28,7 @@ if sys.version_info.major < 3:
 else:
     from shutil import which
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 
 NVIDIA_SMI_GET_GPUS = "nvidia-smi --query-gpu=index,uuid,utilization.gpu,memory.total,memory.used,memory.free,driver_version,name,gpu_serial,display_active,display_mode,temperature.gpu --format=csv,noheader,nounits"
