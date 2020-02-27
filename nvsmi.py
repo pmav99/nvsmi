@@ -187,7 +187,7 @@ def get_available_gpus(
     return available_gpus
 
 
-def _parse_args():
+def get_parser():
     main_parser = argparse.ArgumentParser(
         prog="nvsmi", description="A (user-)friendy interface for nvidia-smi"
     )
@@ -266,8 +266,7 @@ def _parse_args():
         "--json", action="store_true", help="Show results in JSON format"
     )
 
-    args = main_parser.parse_args()
-    return args
+    return main_parser
 
 
 def _take(n, iterable):
@@ -309,15 +308,19 @@ def _nvsmi_ps(args):
 
 
 def _main():
-    args = _parse_args()
+    parser = get_parser()
+    args = parser.parse_args()
     if args.mode == "ls":
         _nvsmi_ls(args)
-    else:
+    elif args.mode == "ps":
         _nvsmi_ps(args)
+    else:
+        parser.print_help()
+
 
 
 if __name__ == "__main__":
     # cli mode
     if not is_nvidia_smi_on_path():
-        sys.exit("Couldn't find 'nvidia-smi' in $PATH: %s" % os.environ["PATH"])
+        sys.exit("Error: Couldn't find 'nvidia-smi' in $PATH: %s" % os.environ["PATH"])
     _main()
