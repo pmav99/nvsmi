@@ -15,6 +15,7 @@ import itertools as it
 import operator
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 
@@ -275,7 +276,7 @@ def _take(n, iterable):
 
 
 def is_nvidia_smi_on_path():
-    return which("nvidia-smi")
+    return shutil.which("nvidia-smi")
 
 
 def _nvsmi_ls(args):
