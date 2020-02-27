@@ -153,15 +153,15 @@ def get_gpu_processes():
 
 
 def is_gpu_available(
-    gpu, gpu_util_max, mem_util_max, mem_free_min, exclude_ids, exclude_uuids
+    gpu, gpu_util_max, mem_util_max, mem_free_min, include_ids, include_uuids
 ):
     return (
         True
         and (gpu.gpu_util <= gpu_util_max)
         and (gpu.mem_util <= mem_util_max)
         and (gpu.mem_free >= mem_free_min)
-        and (gpu.id not in exclude_ids)
-        and (gpu.uuid not in exclude_uuids)
+        and (gpu.id in include_ids)
+        and (gpu.uuid in include_uuids)
     )
 
 
@@ -169,18 +169,18 @@ def get_available_gpus(
     gpu_util_max=1.0,
     mem_util_max=1.0,
     mem_free_min=0,
-    exclude_ids=None,
-    exclude_uuids=None,
+    include_ids=None,
+    include_uuids=None,
 ):
     """ Return up to `limit` available cpus """
-    # Normalize inputs (exclude_ids and exclude_uuis need to be iterables)
-    exclude_ids = exclude_ids or tuple()
-    exclude_uuids = exclude_uuids or tuple()
-    # filter available gpus
+    # Normalize inputs (include_ids and include_uuis need to be iterables)
     gpus = list(get_gpus())
+    include_ids = include_ids or [gpu.id for gpu in gpus]
+    include_uuids = include_uuids or [gpu.uuid for gpu in gpus]
+    # filter available gpus
     selectors = (
         is_gpu_available(
-            gpu, gpu_util_max, mem_util_max, mem_free_min, exclude_ids, exclude_uuids
+            gpu, gpu_util_max, mem_util_max, mem_free_min, include_ids, include_uuids
         )
         for gpu in gpus
     )
@@ -205,6 +205,14 @@ def get_parser():
     ps_parser = subparsers.add_parser("ps", help="Examine the process of a gpu.")
 
     # list
+    ls_parser.add_argument(
+        "--ids", nargs="+", metavar="", help="List of GPU IDs to include"
+    )
+
+    ls_parser.add_argument(
+        "--uuids", nargs="+", metavar="", help="List of GPU uuids to include"
+    )
+
     ls_parser.add_argument(
         "--limit",
         type=int,
@@ -232,12 +240,6 @@ def get_parser():
         default=100,
         metavar="",
         help="The maximum amount of load [0, 100]",
-    )
-    ls_parser.add_argument(
-        "--exclude-ids", nargs="+", metavar="", help="List of GPU IDs to exclude"
-    )
-    ls_parser.add_argument(
-        "--exclude-uuids", nargs="+", metavar="", help="List of GPU UUIDs to exclude"
     )
     ls_parser.add_argument(
         "--sort",
@@ -285,8 +287,8 @@ def _nvsmi_ls(args):
             gpu_util_max=args.gpu_util_max,
             mem_util_max=args.mem_util_max,
             mem_free_min=args.mem_free_min,
-            exclude_ids=args.exclude_ids,
-            exclude_uuids=args.exclude_uuids,
+            include_ids=args.ids,
+            include_uuids=args.uuids,
         )
     )
     gpus.sort(key=operator.attrgetter(args.sort))
@@ -308,9 +310,25 @@ def _nvsmi_ps(args):
             print(output)
 
 
+def validate_ids_and_uuids(args):
+    gpus = list(get_gpus())
+    gpu_ids = {gpu.id for gpu in gpus}
+    gpu_uuids = {gpu.uuid for gpu in gpus}
+    invalid_ids = args.ids.difference(gpu_ids)
+    invalid_uuids = args.uuids.difference(gpu_uuids)
+    if invalid_ids:
+        sys.exit(f"The following GPU ids are not available: {invalid_ids}")
+    if invalid_uuids:
+        sys.exit(f"The following GPU uuids are not available: {invalid_uuids}")
+
+
 def _main():
     parser = get_parser()
     args = parser.parse_args()
+    # Cast ids and uuids to sets
+    args.ids = set(args.ids) if args.ids else set()
+    args.uuids = set(args.uuids) if args.uuids else set()
+    validate_ids_and_uuids(args)
     if args.mode == "ls":
         _nvsmi_ls(args)
     elif args.mode == "ps":
