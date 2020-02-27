@@ -9,11 +9,6 @@ Adapted from: https://github.com/anderskm/gputil
 
 """
 
-from __future__ import division
-from __future__ import print_function
-
-from pprint import pprint
-
 import argparse
 import json
 import itertools as it
@@ -23,10 +18,6 @@ import shlex
 import subprocess
 import sys
 
-if sys.version_info.major < 3:
-    from distutils.spawn import find_executable as which
-else:
-    from shutil import which
 
 __version__ = "0.3.0"
 
