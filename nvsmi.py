@@ -326,16 +326,19 @@ def _main():
     parser = get_parser()
     args = parser.parse_args()
     # Cast ids and uuids to sets
-    args.ids = set(args.ids) if args.ids else set()
-    args.uuids = set(args.uuids) if args.uuids else set()
-    validate_ids_and_uuids(args)
-    if args.mode == "ls":
-        _nvsmi_ls(args)
-    elif args.mode == "ps":
-        _nvsmi_ps(args)
-    else:
+    if args.mode is None:
         parser.print_help()
-
+        sys.exit()
+    else:
+        args.ids = set(args.ids) if args.ids else set()
+        args.uuids = set(args.uuids) if args.uuids else set()
+        validate_ids_and_uuids(args)
+        if args.mode == "ls":
+            _nvsmi_ls(args)
+        elif args.mode == "ps":
+            _nvsmi_ps(args)
+        else:
+            parser.print_help()
 
 
 if __name__ == "__main__":
