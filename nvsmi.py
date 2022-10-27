@@ -20,11 +20,11 @@ import subprocess
 import sys
 
 
-__version__ = "0.4.2"
+__version__ = "0.5.0"
 
 
-NVIDIA_SMI_GET_GPUS = "nvidia-smi --query-gpu=index,uuid,utilization.gpu,memory.total,memory.used,memory.free,driver_version,name,gpu_serial,display_active,display_mode,temperature.gpu --format=csv,noheader,nounits"
-NVIDIA_SMI_GET_PROCS = "nvidia-smi --query-compute-apps=pid,process_name,gpu_uuid,gpu_name,used_memory --format=csv,noheader,nounits"
+NVIDIA_SMI_GET_GPUS = "nvidia-smi --query-gpu=index,uuid,utilization.gpu,memory.total,memory.used,memory.free,driver_version,name,gpu_serial,display_active,display_mode,temperature.gpu,timestamp --format=csv,noheader,nounits"
+NVIDIA_SMI_GET_PROCS = "nvidia-smi --query-compute-apps=pid,process_name,gpu_uuid,gpu_name,used_memory,timestamp --format=csv,noheader,nounits"
 
 
 class GPU(object):
@@ -42,6 +42,7 @@ class GPU(object):
         display_mode,
         display_active,
         temperature,
+        timestamp,
     ):
         self.id = id
         self.uuid = uuid
@@ -56,9 +57,10 @@ class GPU(object):
         self.display_mode = display_mode
         self.display_active = display_active
         self.temperature = temperature
+        self.timestamp = timestamp
 
     def __repr__(self):
-        msg = "id: {id} | UUID: {uuid} | gpu_util: {gpu_util:5.1f}% | mem_util: {mem_util:5.1f}% | mem_free: {mem_free:7.1f}MB |  mem_total: {mem_total:7.1f}MB"
+        msg = "{timestamp} | id: {id} | UUID: {uuid} | gpu_util: {gpu_util:5.1f}% | mem_util: {mem_util:5.1f}% | mem_free: {mem_free:7.1f}MB |  mem_total: {mem_total:7.1f}MB"
         msg = msg.format(**self.__dict__)
         return msg
 
@@ -67,16 +69,19 @@ class GPU(object):
 
 
 class GPUProcess(object):
-    def __init__(self, pid, process_name, gpu_id, gpu_uuid, gpu_name, used_memory):
+    def __init__(
+        self, pid, process_name, gpu_id, gpu_uuid, gpu_name, used_memory, timestamp
+    ):
         self.pid = pid
         self.process_name = process_name
         self.gpu_id = gpu_id
         self.gpu_uuid = gpu_uuid
         self.gpu_name = gpu_name
         self.used_memory = used_memory
+        self.timestamp = timestamp
 
     def __repr__(self):
-        msg = "pid: {pid} | gpu_id: {gpu_id} | gpu_uuid: {gpu_uuid} | gpu_name: {gpu_name} | used_memory: {used_memory:7.1f}MB"
+        msg = "{timestamp} | pid: {pid} | gpu_id: {gpu_id} | gpu_uuid: {gpu_uuid} | gpu_name: {gpu_name} | used_memory: {used_memory:7.1f}MB"
         msg = msg.format(**self.__dict__)
         return msg
 
@@ -106,6 +111,7 @@ def _get_gpu(line):
     display_active = values[9]
     display_mode = values[10]
     temp_gpu = to_float_or_inf(values[11])
+    timestamp = values[11]
     gpu = GPU(
         id,
         uuid,
@@ -119,6 +125,7 @@ def _get_gpu(line):
         display_mode,
         display_active,
         temp_gpu,
+        timestamp,
     )
     return gpu
 
@@ -138,7 +145,10 @@ def _get_gpu_proc(line, gpu_uuid_to_id_map):
     gpu_name = values[3]
     used_memory = to_float_or_inf(values[4])
     gpu_id = gpu_uuid_to_id_map.get(gpu_uuid, -1)
-    proc = GPUProcess(pid, process_name, gpu_id, gpu_uuid, gpu_name, used_memory)
+    timestamp = values[5]
+    proc = GPUProcess(
+        pid, process_name, gpu_id, gpu_uuid, gpu_name, used_memory, timestamp
+    )
     return proc
 
 
@@ -172,7 +182,7 @@ def get_available_gpus(
     include_ids=None,
     include_uuids=None,
 ):
-    """ Return up to `limit` available cpus """
+    """Return up to `limit` available cpus"""
     # Normalize inputs (include_ids and include_uuis need to be iterables)
     gpus = list(get_gpus())
     include_ids = include_ids or [gpu.id for gpu in gpus]
