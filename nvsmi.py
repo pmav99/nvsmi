@@ -22,7 +22,7 @@ import sys
 from datetime import datetime
 from typing import Iterable, List, Optional
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 
 NVIDIA_SMI_GET_GPUS = "nvidia-smi --query-gpu=index,uuid,utilization.gpu,memory.total,memory.used,memory.free,driver_version,name,gpu_serial,display_active,display_mode,temperature.gpu,timestamp --format=csv,noheader,nounits"
