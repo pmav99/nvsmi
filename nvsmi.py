@@ -27,7 +27,7 @@ __version__ = "0.6.0"
 
 NVIDIA_SMI_GET_GPUS = "nvidia-smi --query-gpu=index,uuid,utilization.gpu,memory.total,memory.used,memory.free,driver_version,name,gpu_serial,display_active,display_mode,temperature.gpu,timestamp --format=csv,noheader,nounits"
 NVIDIA_SMI_GET_PROCS = "nvidia-smi --query-compute-apps=pid,process_name,gpu_uuid,gpu_name,used_memory,timestamp --format=csv,noheader,nounits"
-NVIDIA_TIME_FMT = "YYYY/MM/DD HH:MM:SS.msec"
+NVIDIA_TIME_FMT = "%Y/%m/%d %H:%M:%S.%f"
 
 
 class GPUState(object):
