@@ -124,7 +124,7 @@ def _get_gpu(line):
 
 
 def get_gpus():
-    output = subprocess.check_output(shlex.split(NVIDIA_SMI_GET_GPUS))
+    output = subprocess.check_output(shlex.split(NVIDIA_SMI_GET_GPUS), shell=True)
     lines = output.decode("utf-8").split(os.linesep)
     gpus = (_get_gpu(line) for line in lines if line.strip())
     return gpus
@@ -144,7 +144,7 @@ def _get_gpu_proc(line, gpu_uuid_to_id_map):
 
 def get_gpu_processes():
     gpu_uuid_to_id_map = {gpu.uuid: gpu.id for gpu in get_gpus()}
-    output = subprocess.check_output(shlex.split(NVIDIA_SMI_GET_PROCS))
+    output = subprocess.check_output(shlex.split(NVIDIA_SMI_GET_PROCS), shell=True)
     lines = output.decode("utf-8").split(os.linesep)
     processes = [
         _get_gpu_proc(line, gpu_uuid_to_id_map) for line in lines if line.strip()
